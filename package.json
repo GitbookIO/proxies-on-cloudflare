@@ -1,0 +1,9 @@
+{
+    "name": "@gibook/cloudflare-worker",
+    "version": "0.0.0",
+    "dependencies": {},
+    "devDependencies": {
+        "serverless": "^1.32.0",
+        "serverless-cloudflare-workers": "^0.1.1"
+    }
+}
