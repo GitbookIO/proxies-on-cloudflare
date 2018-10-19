@@ -3,7 +3,16 @@
     "version": "0.0.0",
     "dependencies": {},
     "devDependencies": {
+        "@babel/cli": "^7.1.2",
+        "@babel/core": "^7.1.2",
+        "@babel/preset-env": "^7.1.0",
+        "@babel/preset-flow": "^7.0.0",
         "serverless": "^1.32.0",
         "serverless-cloudflare-workers": "^0.1.1"
+    },
+    "scripts": {
+        "prepare": "babel src --out-dir dist",
+        "deploy": "serverless deploy",
+        "predeploy": "yarn run prepare"
     }
 }
