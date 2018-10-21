@@ -5,8 +5,7 @@ addEventListener("fetch", event => {
   event.respondWith(fetchAndStream(event.request))
 });
 
-function createUpstreamURL(request: Request): URL {
-    const requestUrl = new URL(request.url)
+function createUpstreamURL(requestUrl: URL): URL {
     const url = new URL(CLOUD_FUNCTION_URL);
     url.pathname = `${url.pathname}/${requestUrl.pathname}`;
 
@@ -14,8 +13,14 @@ function createUpstreamURL(request: Request): URL {
 }
 
 async function fetchAndStream(request: Request): Promise<Response> {
-  let response = await fetch(createUpstreamURL(requet), request)
-  let { readable, writable } = new TransformStream()
+  const requestUrl = new URL(request.url);
+  const upstreamUrl = createUpstreamURL(requestUrl);
+  const upstreamRequest = new Request(upstreamUrl, {
+    method: request.method,
+    headers: request.headers
+  });
+  const response = await fetch(upstreamRequest)
+  const { readable, writable } = new TransformStream()
 
   streamBody(response.body, writable)
 
@@ -23,8 +28,8 @@ async function fetchAndStream(request: Request): Promise<Response> {
 }
 
 async function streamBody(readable, writable) {
-  let reader = readable.getReader()
-  let writer = writable.getWriter()
+  const reader = readable.getReader()
+  const writer = writable.getWriter()
 
   while (true) {
     const { done, value } = await reader.read()

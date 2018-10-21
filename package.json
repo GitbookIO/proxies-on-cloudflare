@@ -1,5 +1,6 @@
 {
     "name": "@gibook/cloudflare-worker",
+    "main": "./dist/worker.js",
     "version": "0.0.0",
     "dependencies": {},
     "devDependencies": {
@@ -8,9 +9,11 @@
         "@babel/preset-env": "^7.1.0",
         "@babel/preset-flow": "^7.0.0",
         "serverless": "^1.32.0",
-        "serverless-cloudflare-workers": "^0.1.1"
+        "serverless-cloudflare-workers": "^0.1.1",
+        "workers-preview": "^1.0.5"
     },
     "scripts": {
+        "start": "workers-preview < ./dist/worker.js",
         "prepare": "babel src --out-dir dist",
         "deploy": "serverless deploy",
         "predeploy": "yarn run prepare"

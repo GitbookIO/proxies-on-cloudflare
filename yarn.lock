@@ -3415,6 +3415,12 @@ widest-line@^2.0.0:
   dependencies:
     string-width "^2.1.1"
 
+workers-preview@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/workers-preview/-/workers-preview-1.0.5.tgz#0c2fc3c9ea6794b068e65e9f344b5cd26a01f9af"
+  dependencies:
+    opn "^5.3.0"
+
 wrappy@1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/wrappy/-/wrappy-1.0.2.tgz#b5243d8f3ec1aa35f1364605bc0d1036e30ab69f"
