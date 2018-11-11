@@ -1,28 +1,41 @@
 /* @flow */
-const CLOUD_FUNCTION_URL = 'https://us-central1-gitbook-staging.cloudfunctions.net/ssrWebsite';
+//const CLOUD_FUNCTION_URL = 'https://us-central1-gitbook-staging.cloudfunctions.net/ssrWebsite';
+const CLOUD_FUNCTION_URL = 'https://request-dump.herokuapp.com'
 
 addEventListener("fetch", event => {
   event.respondWith(fetchAndStream(event.request))
 });
 
-function createUpstreamURL(requestUrl: URL): URL {
-    const url = new URL(CLOUD_FUNCTION_URL);
-    url.pathname = `${url.pathname}/${requestUrl.pathname}`;
+const UPSTREAM_URL = new URL(CLOUD_FUNCTION_URL);
+function requestToUpstream(request: Request): URL {
+  // Parse Request's URL
+  const url = new URL(request.url);
+  // Preserve original hostname (to pass as header)
+  const hostname = url.hostname;
 
-    return url
+  // Modify request (to route to upstream)
+  url.pathname = `${UPSTREAM_URL.pathname}/${url.pathname}`;
+  url.hostname = UPSTREAM_URL.hostname;
+
+  // Assemble request
+  return new Request(url, {
+    method: request.method,
+    headers: {
+      'X-Forwarded-Host': hostname,
+      'X-Forwarded-Proto': url.protocol,
+    }
+  });
 }
 
 async function fetchAndStream(request: Request): Promise<Response> {
-  const requestUrl = new URL(request.url);
-  const upstreamUrl = createUpstreamURL(requestUrl);
-  const upstreamRequest = new Request(upstreamUrl, {
-    method: request.method,
-    headers: request.headers
-  });
+  // Modify request
+  const upstreamRequest = requestToUpstream(request);
+
+  // Make request
   const response = await fetch(upstreamRequest)
   const { readable, writable } = new TransformStream()
 
-  streamBody(response.body, writable)
+  streamBody(response.body, writable);
 
   return new Response(readable, response)
 }
