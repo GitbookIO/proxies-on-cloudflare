@@ -1,6 +1,5 @@
 /* @flow */
-//const CLOUD_FUNCTION_URL = 'https://us-central1-gitbook-staging.cloudfunctions.net/ssrWebsite';
-const CLOUD_FUNCTION_URL = 'https://request-dump.herokuapp.com'
+// const CLOUD_FUNCTION_URL = 'https://request-dump.herokuapp.com'
 
 // Firebase Hosting Config
 const HOSTING_CONFIG = {
@@ -112,7 +111,8 @@ function rewritesMatcher(rewrites) {
 
     // Globs
     for (var i = 0; i < globs.length; i++) {
-      if (path.match(globs[i].regex)) {
+      if (globs[i].regex.test(path)) {
+        console.log('regex:', globs[i].regex.toString());
         return globs[i].function;
       }
     }
@@ -128,12 +128,12 @@ function isGlob(str) {
   // 1. "!(negation)""
   // 2. "*" glob stars
   // 3. Ends with /
-  return str.match(/\!\(\S+?\)|\*\*|\*|(?:\/$)/) !== null;
+  return /\!\(\S+?\)|\*\*|\*|(?:\/$)/.test(str);
 }
 
 // pathGlobToRegex converts a glob (firebase hosting "source") to a regex
 function pathGlobToRegex(str) {
-  return str
+  const expr = str
     // Ensure path starts with '/'
     .replace(/^\/?/, '/')
     // Escape slashes and dots
@@ -144,6 +144,9 @@ function pathGlobToRegex(str) {
     // Transform glob at end
     .replace(/\*\*$/, '.*')
     .replace(/\*\*\/\*/, '.*')
+
+  // Add delimiters and
+  return new RegExp(`^${expr}\$`);
 }
 
 function cloudfuncHost(projectID: String) {
@@ -154,33 +157,55 @@ function cloudfuncEndpoint(projectID: String, name: String): URL {
   return new URL(`https://us-central1-${projectID}.cloudfunctions.net/${name}`);
 }
 
+function fbhostingEndpoint(projectID: String) {
+  return new URL(`https://${projectID}.firebaseapp.com`);
+}
+
 // firebaseProxy
 function firebaseFetcher(projectID: String, config: Object) {
   // Cloud Function host to route requests to
   const upstream = cloudfuncHost(projectID);
   // Matcher to map URL paths to cloud funcs
   const matcher = rewritesMatcher(config.rewrites);
+  // Static Hosting endpoint
+  const hosting = fbhostingEndpoint(projectID)
 
-  return async function proxy(request: Request) {
-    const funcname = matcher(request.pathname || '/');
-    const endpoint = cloudfuncEndpoint(projectID, funcname);
+  return async function proxy(event: FetchEvent) {
+    console.time('firecloud');
+    const request = event.request;
+
+    // Check cache
+    const cache = caches.default;
+    let response = await cache.match(request);
+    if (response) {
+      console.log('served from cache:', request.url)
+      console.timeEnd('firecloud');
+      return response;
+    }
+
+    const pathname = (new URL(request.url)).pathname;
+    const funcname = matcher(pathname);
+    const endpoint = funcname ? cloudfuncEndpoint(projectID, funcname) : hosting;
+    console.log('url:', pathname)
+    console.log('funcname:', funcname);
+    console.log('endpoint:', endpoint.toString());
 
     // Modify request
     const upstreamRequest = requestToUpstream(request, endpoint);
 
     // Make request
-    const response = await fetch(upstreamRequest)
-    const { readable, writable } = new TransformStream()
+    response = await fetch(upstreamRequest)
+    //event.waitUntil(cache.put(request, response.clone()))
 
-    streamBody(response.body, writable);
-
-    return new Response(readable, response)
+    console.timeEnd('firecloud');
+    return response;
   }
 }
 
+// Init once (globally) for better perfs
+const fetcher = firebaseFetcher('gitbook-staging', HOSTING_CONFIG);
 addEventListener("fetch", event => {
-  event.respondWith(firebaseFetcher('gitbook-staging', HOSTING_CONFIG)(event.request))
-  // event.respondWith(fetchAndStream(event.request))
+  event.respondWith(fetcher(event));
 });
 
 function requestToUpstream(request: Request, upstream: URL): URL {
@@ -201,31 +226,4 @@ function requestToUpstream(request: Request, upstream: URL): URL {
       'X-Forwarded-Proto': url.protocol,
     }
   });
-}
-
-const UPSTREAM_URL = new URL(CLOUD_FUNCTION_URL);
-async function fetchAndStream(request: Request): Promise<Response> {
-  // Modify request
-  const upstreamRequest = requestToUpstream(request, UPSTREAM_URL);
-
-  // Make request
-  const response = await fetch(upstreamRequest)
-  const { readable, writable } = new TransformStream()
-
-  streamBody(response.body, writable);
-
-  return new Response(readable, response)
-}
-
-async function streamBody(readable, writable) {
-  const reader = readable.getReader()
-  const writer = writable.getWriter()
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    await writer.write(value)
-  }
-
-  await writer.close()
 }
