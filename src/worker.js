@@ -112,7 +112,6 @@ function rewritesMatcher(rewrites) {
     // Globs
     for (var i = 0; i < globs.length; i++) {
       if (globs[i].regex.test(path)) {
-        console.log('regex:', globs[i].regex.toString());
         return globs[i].function;
       }
     }
@@ -171,41 +170,57 @@ function firebaseFetcher(projectID: String, config: Object) {
   const hosting = fbhostingEndpoint(projectID)
 
   return async function proxy(event: FetchEvent) {
-    console.time('firecloud');
     const request = event.request;
+    const hash = await varyHash(request);
+    // Compute cache key to simulate 'Vary' caching support
+    const cacheKey = await requestCacheKey(request);
 
     // Check cache
     const cache = caches.default;
-    let response = await cache.match(request);
+    let response = await cache.match(cacheKey);
     if (response) {
-      console.log('served from cache:', request.url)
-      console.timeEnd('firecloud');
-      return response;
+      // Change headers for cache hit
+      const headers = new Headers(response.headers);
+      headers.set('via', 'magic cache');
+      headers.set('x-magic-hash', hash);
+      headers.delete('link');
+      return customHeaders(response, headers);
     }
 
-    const pathname = (new URL(request.url)).pathname;
+    // Find which endpoint to use
+    const url = new URL(request.url);
+    const pathname = url.pathname;
     const funcname = matcher(pathname);
     const endpoint = funcname ? cloudfuncEndpoint(projectID, funcname) : hosting;
-    console.log('url:', pathname)
-    console.log('funcname:', funcname);
-    console.log('endpoint:', endpoint.toString());
 
     // Modify request
     const upstreamRequest = requestToUpstream(request, endpoint);
 
     // Make request
-    response = await fetch(upstreamRequest)
-    //event.waitUntil(cache.put(request, response.clone()))
+    response = await fetch(upstreamRequest, {
+      redirect: 'manual',
+    });
+    event.waitUntil(cache.put(cacheKey, response.clone()))
 
-    console.timeEnd('firecloud');
-    return response;
+    // Change headers for cache miss
+    const headers = new Headers(response.headers);
+    headers.set('via', 'no cache')
+    headers.set('x-magic-hash', hash);
+    headers.delete('link');
+
+    return customHeaders(response, headers);
   }
 }
 
 // Init once (globally) for better perfs
 const fetcher = firebaseFetcher('gitbook-staging', HOSTING_CONFIG);
-addEventListener("fetch", event => {
-  event.respondWith(fetcher(event));
+addEventListener("fetch", (event) => {
+  let prom = fetcher(event)
+    .then(
+      resp => resp,
+      err => new Response(err.stack || err, { status: 500 })
+    )
+  return event.respondWith(prom);
 });
 
 function requestToUpstream(request: Request, upstream: URL): URL {
@@ -218,12 +233,72 @@ function requestToUpstream(request: Request, upstream: URL): URL {
   url.pathname = `${upstream.pathname}/${url.pathname}`;
   url.hostname = upstream.hostname;
 
-  // Assemble request
+  // Copy old headers
+  const headers = new Headers(request.headers);
+  headers.set('X-Forwarded-Host', hostname);
+  headers.set('X-Forwarded-Proto', url.protocol);
+
   return new Request(url, {
     method: request.method,
-    headers: {
-      'X-Forwarded-Host': hostname,
-      'X-Forwarded-Proto': url.protocol,
-    }
+    headers: headers
   });
+}
+
+async function requestCacheKey(request) {
+  // Ignore non GETs
+  if (request.method != 'GET') {
+    return request;
+  }
+
+  // Hash request
+  const hash = await varyHash(request);
+
+  // Get original path
+  const url = new URL(request.url);
+
+  url.pathname = `/__magic_cache/${hash}` + url.pathname;
+  return new Request(url, {
+    headers: request.headers,
+    method: 'GET'
+  });
+}
+
+async function varyHash(request) {
+  const seed = '44'
+  const varyKeys = ['Accept-Encoding', 'Authorization', 'Cookie', 'X-CDN-Host'];
+  const values = varyKeys.map(k => request.headers.get(k));
+  const hash = await sha256([seed].concat(values).join(','));
+  return hash;
+}
+
+// Returns a new response with customized headers (provided)
+function customHeaders(response, headers) {
+  return new Response(response.body, {
+    headers: headers,
+    status: response.status,
+    statusText: response.statusText,
+  })
+}
+
+function headerDict(headers) {
+  let dict = {};
+  for (var entry of headers.entries()) {
+    dict[entry[0]] = entry[1];
+  }
+  return dict;
+}
+
+async function sha256(message) {
+  // encode as UTF-8
+  const msgBuffer = new TextEncoder().encode(message)
+
+  // hash the message
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
+
+  // convert ArrayBuffer to Array
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+
+  // convert bytes to hex string
+  const hashHex = hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('')
+  return hashHex
 }
