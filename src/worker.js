@@ -191,7 +191,16 @@ function firebaseFetcher(projectID: String, config: Object) {
     const url = new URL(request.url);
     const pathname = url.pathname;
     const funcname = matcher(pathname);
-    const endpoint = funcname ? cloudfuncEndpoint(projectID, funcname) : hosting;
+    // Is this URL part of Firebase's reserved /__/* namespace
+    const isReserved = pathname.startsWith('/__/');
+
+    // Pick endpoint to route to
+    let endpoint;
+    if (isReserved || !funcname) {
+      endpoint = hosting;
+    } else {
+      endpoint = cloudfuncEndpoint(projectID, funcname);
+    }
 
     // Modify request
     const upstreamRequest = requestToUpstream(request, endpoint);
