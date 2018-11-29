@@ -239,6 +239,7 @@ function requestToUpstream(request: Request, upstream: URL): URL {
   headers.set('X-Forwarded-Proto', url.protocol);
 
   return new Request(url, {
+    body: request.body,
     method: request.method,
     headers: headers
   });
