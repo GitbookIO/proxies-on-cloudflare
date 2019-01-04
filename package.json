@@ -9,13 +9,16 @@
         "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
         "@babel/preset-env": "^7.1.0",
         "@babel/preset-flow": "^7.0.0",
+        "jest": "^23.6.0",
         "serverless": "^1.32.0",
         "serverless-cloudflare-workers": "^0.1.1",
+        "webpack": "^4.28.3",
+        "webpack-cli": "^3.2.0",
         "workers-preview": "^1.0.5"
     },
     "scripts": {
-        "start": "workers-preview < ./dist/worker.js",
-        "prepare": "babel src --out-dir dist",
+        "start": "workers-preview < ./dist/main.js",
+        "prepare": "webpack --target=webworker --mode=none ./_examples/gitbook/main.js",
         "deploy": "serverless deploy",
         "predeploy": "yarn run prepare"
     }
