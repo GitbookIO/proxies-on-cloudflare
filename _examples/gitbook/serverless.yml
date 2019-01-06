@@ -17,7 +17,7 @@ plugins:
 functions:
   proxy:
     worker: proxy
-    script: dist/index
+    script: dist/worker
     events:
       - http:
           url: www.gitbook.com/*
