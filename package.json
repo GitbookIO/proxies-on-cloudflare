@@ -1,5 +1,5 @@
 {
-    "name": "cloudfire",
+    "name": "firebase-on-cloudflare",
     "main": "./dist/worker.js",
     "version": "0.0.0",
     "dependencies": {},
