@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "resolveJsonModule": true,
+        "declaration": true,
+        "outDir": "./dist/",
+        "strict": true
+    },
+    "include": [
+        "./main.ts",
+        "./firebase.json",
+    ]
+}

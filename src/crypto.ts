@@ -1,4 +1,4 @@
-export async function sha256(message) {
+export async function sha256(message: string): Promise<string> {
     // encode as UTF-8
     const msgBuffer = new TextEncoder().encode(message);
 

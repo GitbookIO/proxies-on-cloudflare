@@ -1,0 +1,21 @@
+{
+    "name": "@gibook/cloudflare-worker",
+    "private": true,
+    "main": "./dist/main.js",
+    "version": "0.0.0",
+    "dependencies": {},
+    "devDependencies": {
+        "serverless": "^1.32.0",
+        "serverless-cloudflare-workers": "^0.1.1",
+        "typescript": "^3.2.2",
+        "workers-preview": "^1.0.5"
+    },
+    "scripts": {
+        "start": "workers-preview < ./dist/main.js",
+        "prepare": "tsc",
+        "test": "jest",
+        "lint": "tslint ./src/**/*.ts",
+        "deploy": "serverless deploy",
+        "predeploy": "yarn run prepare"
+    }
+}
