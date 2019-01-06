@@ -1,6 +1,6 @@
 {
     "name": "firebase-on-cloudflare",
-    "main": "./dist/worker.js",
+    "main": "./dist/index.js",
     "version": "0.0.0",
     "dependencies": {},
     "devDependencies": {
