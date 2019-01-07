@@ -23,7 +23,7 @@ addEventListener("fetch", (event) => fcloud.serve(event));
 
 ## Why ?
 
-We (GitBook) built `firebase-on-cloudflare` to fix issues we had between `Cloudflare` and `Fastly/Firebase Hosting`, that neither party was willing to fix ...
+We (GitBook) built `firebase-on-cloudflare` to fix connection issues we had between `Cloudflare` and `Fastly/Firebase Hosting`.
 
 ## Ideas
 
