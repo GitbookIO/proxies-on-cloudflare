@@ -1,12 +1,9 @@
-/* @flow */
-// const CLOUD_FUNCTION_URL = 'https://request-dump.herokuapp.com'
-
 import { requestCacheKey, varyHash } from './cache';
 import { Matcher } from './rewrites';
 import { cloudfuncHost, cloudfuncEndpoint, fbhostingEndpoint } from './urls';
-import { FirebaseConfig, FetchEvent, CloudflareCacheStorage, CloudflareCache } from './types';
+import { FirebaseConfig, FetchEvent, CloudflareCacheStorage } from './types';
 
-export default class Firecloud {
+export default class FirebaseOnCloudflare {
     matcher: Matcher;
     projectID: string;
     functionEndpoint: URL;
@@ -15,10 +12,10 @@ export default class Firecloud {
     constructor(projectID: string, config: FirebaseConfig) {
         // Keep project ID
         this.projectID = projectID;
-        // Cloud Function host to route requests to
-        this.functionEndpoint = cloudfuncHost(projectID);
         // Matcher to map URL paths to cloud funcs
         this.matcher = new Matcher(config.rewrites);
+        // Cloud Function host to route requests to
+        this.functionEndpoint = cloudfuncHost(projectID);
         // Static Hosting endpoint
         this.hostingEndpoint = fbhostingEndpoint(projectID)
     }
