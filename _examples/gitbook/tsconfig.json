@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "resolveJsonModule": true,
+        "declaration": true,
+        "outDir": "./dist/",
+        "rootDirs": [
+            "./"
+        ],
+        "baseUrl": "./",
+        "paths": {
+            "firebase-on-cloudflare": [
+                "../../dist"
+            ],
+        },
+        "strict": true
+    },
+    "include": [
+        "./main.ts",
+        "./firebase.json"
+    ]
+}

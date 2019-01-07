@@ -1,15 +1,12 @@
 service:
-    name: hello-world
+    name: firebase
     config:
       accountId: CLOUDFLARE_ACCOUNT_ID
       zoneId: CLOUDFLARE_ZONE_ID
       workers:
-        hello:
+        proxy:
           routes:
-            - example.com/hello/*
-        foo_script:
-          routes:
-            - example.com/foo/*
+            - www.gitbook.com/*
 
 provider:
   name: cloudflare
@@ -23,7 +20,5 @@ functions:
     script: dist/worker
     events:
       - http:
-          url: example.com/hello/user
+          url: www.gitbook.com/*
           method: GET
-          headers:
-            someKey: someValue
