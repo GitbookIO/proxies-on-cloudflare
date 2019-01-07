@@ -3,6 +3,9 @@
     "main": "./dist/index.js",
     "version": "0.0.1",
     "dependencies": {},
+    "files": [
+        "dist/*"
+    ],
     "devDependencies": {
         "@types/jest": "^23.3.11",
         "jest": "^23.6.0",
