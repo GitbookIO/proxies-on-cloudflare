@@ -14,12 +14,9 @@
         "typescript": "^3.2.2"
     },
     "scripts": {
-        "start": "workers-preview < ./dist/main.js",
         "prepare": "tsc",
         "test": "jest",
-        "lint": "tslint ./src/**/*.ts",
-        "deploy": "serverless deploy",
-        "predeploy": "yarn run prepare"
+        "lint": "tslint ./src/**/*.ts"
     },
     "jest": {
         "roots": [
