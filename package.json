@@ -1,7 +1,7 @@
 {
     "name": "firebase-on-cloudflare",
     "main": "./dist/index.js",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "dependencies": {},
     "devDependencies": {
         "@types/jest": "^23.3.11",
