@@ -64,6 +64,7 @@ export default class FirebaseOnCloudflare {
                 ...this.globalHeaders,
                 'via': 'magic cache',
                 'x-magic-hash': hash,
+                'x-cache': 'HIT',
                 'link': null,
             });
             return customHeaders(response, headers);
@@ -86,6 +87,7 @@ export default class FirebaseOnCloudflare {
             ...this.globalHeaders,
             'via': 'no cache',
             'x-magic-hash': hash,
+            'x-cache': 'MISS',
             'link': null,
         });
         return customHeaders(response, headers);
