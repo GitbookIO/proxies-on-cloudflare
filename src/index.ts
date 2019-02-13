@@ -3,13 +3,26 @@ import { Matcher } from './rewrites';
 import { cloudfuncHost, cloudfuncEndpoint, fbhostingEndpoint } from './urls';
 import { FirebaseConfig, FetchEvent, CloudflareCacheStorage } from './types';
 
+interface ExtraOptions {
+    // Extra headers to add to each response
+    headers?: HeaderOptions
+    // Seed (string) of our cache hash
+    // changing the seed will invalidate all previous entries
+    seed?: string
+}
+interface HeaderOptions {
+    [key: string]: string | null
+}
+
 export default class FirebaseOnCloudflare {
     matcher: Matcher;
     projectID: string;
     functionEndpoint: URL;
     hostingEndpoint: URL;
+    globalHeaders: HeaderOptions;
+    seed: string;
 
-    constructor(projectID: string, config: FirebaseConfig) {
+    constructor(projectID: string, config: FirebaseConfig, extra?: ExtraOptions) {
         // Keep project ID
         this.projectID = projectID;
         // Matcher to map URL paths to cloud funcs
@@ -17,7 +30,11 @@ export default class FirebaseOnCloudflare {
         // Cloud Function host to route requests to
         this.functionEndpoint = cloudfuncHost(projectID);
         // Static Hosting endpoint
-        this.hostingEndpoint = fbhostingEndpoint(projectID)
+        this.hostingEndpoint = fbhostingEndpoint(projectID);
+        // Custom headers
+        this.globalHeaders = (extra && extra.headers) ? extra.headers : {};
+        // Cache seed
+        this.seed = (extra && extra.seed) ? extra.seed : '42';
     }
 
     async serve(event: FetchEvent): Promise<Response> {
@@ -32,10 +49,10 @@ export default class FirebaseOnCloudflare {
 
     async _serve(event: FetchEvent): Promise<Response> {
         const request = event.request;
-        const hash = await varyHash(request);
+        const hash = await varyHash(request, this.seed);
 
         // Compute cache key to simulate 'Vary' caching support
-        const cacheKey = await requestCacheKey(request);
+        const cacheKey = await requestCacheKey(request, this.seed);
 
         // Check cache
         const cfCaches = (caches as unknown) as CloudflareCacheStorage;
@@ -43,10 +60,12 @@ export default class FirebaseOnCloudflare {
         let response = await cache.match(cacheKey);
         if (response) {
             // Change headers for cache hit
-            const headers = new Headers(response.headers);
-            headers.set('via', 'magic cache');
-            headers.set('x-magic-hash', hash);
-            headers.delete('link');
+            const headers = headerChanges(response.headers, {
+                ...this.globalHeaders,
+                'via': 'magic cache',
+                'x-magic-hash': hash,
+                'link': null,
+            });
             return customHeaders(response, headers);
         }
 
@@ -63,11 +82,12 @@ export default class FirebaseOnCloudflare {
         event.waitUntil(cache.put(cacheKey, response.clone()))
 
         // Change headers for cache miss
-        const headers = new Headers(response.headers);
-        headers.set('via', 'no cache')
-        headers.set('x-magic-hash', hash);
-        headers.delete('link');
-
+        const headers = headerChanges(response.headers, {
+            ...this.globalHeaders,
+            'via': 'no cache',
+            'x-magic-hash': hash,
+            'link': null,
+        });
         return customHeaders(response, headers);
     }
 
@@ -113,6 +133,20 @@ function requestToUpstream(request: Request, upstream: URL): Request {
         method: request.method,
         headers: headers
     });
+}
+
+function headerChanges(headers: Headers, changes: HeaderOptions): Headers {
+    const copy = new Headers(headers);
+    const keys = Object.keys(changes).sort();
+    keys.forEach(key => {
+        const value = changes[key];
+        if (value) {
+            copy.set(key, value);
+        } else {
+            copy.delete(key);
+        }
+    });
+    return copy;
 }
 
 // Returns a new response with customized headers (provided)

@@ -1,14 +1,14 @@
 import { sha256 } from './crypto';
 
 // requestCacheKey builds a Request object that can be used as a cloudflare cache key
-export async function requestCacheKey(request: Request): Promise<Request> {
+export async function requestCacheKey(request: Request, seed: string): Promise<Request> {
     // Ignore non GETs
     if (request.method != 'GET') {
         return request;
     }
 
     // Hash request
-    const hash = await varyHash(request);
+    const hash = await varyHash(request, seed);
 
     // Get original path
     const url = new URL(request.url);
@@ -21,8 +21,7 @@ export async function requestCacheKey(request: Request): Promise<Request> {
 }
 
 // varyHash hashes a request's headers so we can use them in the cache key
-export async function varyHash(request: Request): Promise<string> {
-    const seed = '44'
+export async function varyHash(request: Request, seed: string): Promise<string> {
     const varyKeys = ['Accept-Encoding', 'Authorization', 'Cookie', 'X-CDN-Host'];
     const values = varyKeys.map(k => request.headers.get(k) || '');
     const hash = await sha256([seed].concat(values).join(','));
