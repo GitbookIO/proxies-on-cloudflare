@@ -1,4 +1,5 @@
 import { FirebaseRewrites } from './types'
+import { isGlob, globToRegex } from './globs';
 
 interface GlobMatch {
     regex: RegExp,
@@ -48,31 +49,4 @@ export class Matcher {
         // No function found
         return null;
     }
-}
-
-// isGlob returns true if a string looks like a glob pattern
-export function isGlob(str: string): boolean {
-    // Contains either
-    // 1. "!(negation)""
-    // 2. "*" glob stars
-    // 3. Ends with /
-    return /\!\(\S+?\)|\*\*|\*|(?:\/$)/.test(str);
-}
-
-// pathGlobToRegex converts a glob (firebase hosting "source") to a regex
-export function globToRegex(str: string): RegExp {
-    const expr = str
-        // Ensure path starts with '/'
-        .replace(/^\/?/, '/')
-        // Escape slashes and dots
-        .replace(/\//g, '\\/')
-        .replace(/\./, '\\.')
-        // Transform negative expressions
-        .replace(/\!\((\S+?)\)/, "(?!$1).*?")
-        // Transform glob at end
-        .replace(/\*\*$/, '.*')
-        .replace(/\*\*\/\*/, '.*')
-
-    // Add delimiters and
-    return new RegExp(`^${expr}\$`);
 }
