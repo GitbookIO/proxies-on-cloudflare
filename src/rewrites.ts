@@ -19,7 +19,7 @@ export class Matcher {
         this.globs = rewrites
             .filter(r => isGlob(r.source))
             .map(r => ({
-                regex: globToRegex(r.source),
+                regex: globToRegex(pathGlob(r.source)),
                 function: r.function,
             }));
 
@@ -49,4 +49,10 @@ export class Matcher {
         // No function found
         return null;
     }
+}
+
+// pathGlob ensure that all path glob expressions start with a /
+function pathGlob(expr: string): string {
+    // Ensure path starts with '/'
+    return expr.replace(/^\/?/, '/');
 }

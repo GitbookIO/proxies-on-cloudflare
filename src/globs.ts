@@ -10,8 +10,6 @@ export function isGlob(str: string): boolean {
 // globToRegex converts a glob expression to a regex
 export function globToRegex(str: string): RegExp {
     const expr = str
-        // Ensure path starts with '/'
-        //.replace(/^\/?/, '/')
         // Escape slashes and dots
         .replace(/\//g, '\\/')
         .replace(/\./, '\\.')
