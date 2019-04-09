@@ -42,13 +42,11 @@ export default class FirebaseOnCloudflare {
     }
 
     async serve(event: FetchEvent): Promise<Response> {
-        const prom = this.proxy(event)
+        return this.proxy(event)
             .then(
                 resp => resp,
                 err => new Response(err.stack || err, { status: 500 })
             );
-
-        return event.respondWith(prom);
     }
 
     getEndpoint(request: Request): URL {
