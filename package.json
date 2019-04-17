@@ -1,5 +1,5 @@
 {
-    "name": "firebase-on-cloudflare",
+    "name": "proxies-on-cloudflare",
     "main": "./dist/index.js",
     "version": "0.0.4",
     "dependencies": {},
