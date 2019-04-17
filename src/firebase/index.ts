@@ -4,6 +4,7 @@ import { FirebaseConfig } from './types';
 import { FetchEvent, ServeFunction } from '../types';
 import { cache } from '../cache';
 import { custom as customProxy } from '../proxy/'
+import { patchResponse, patchHeaders } from '../common/patch';
 
 interface ExtraOptions {
     // Extra headers to add to each response
@@ -43,11 +44,18 @@ export default class Firebase {
     }
 
     async serve(event: FetchEvent): Promise<Response> {
-        return this.proxy(event)
+        return this._serve(event)
             .then(
                 resp => resp,
                 err => new Response(err.stack || err, { status: 500 })
             );
+    }
+
+    async _serve(event: FetchEvent): Promise<Response> {
+        const resp = await this.proxy(event);
+        return patchResponse(resp, {
+            headers: patchHeaders(resp.headers, this.globalHeaders)
+        });
     }
 
     getEndpoint(request: Request): URL {
