@@ -10,7 +10,7 @@
         ],
         "baseUrl": "./",
         "paths": {
-            "firebase-on-cloudflare": [
+            "proxies-on-cloudflare": [
                 "../../dist"
             ],
         },

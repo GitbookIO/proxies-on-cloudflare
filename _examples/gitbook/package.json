@@ -16,7 +16,7 @@
         "start": "workers-preview < ./dist/worker.js",
         "prestart": "npm run prepare",
         "start:dev": "workers-preview < ./dist/worker.js",
-        "prestart:dev": "tsc && webpack --resolve-alias 'firebase-on-cloudflare=../../../dist/' --target=webworker --mode=none ./dist/main.js --output ./dist/worker.js",
+        "prestart:dev": "tsc && webpack --resolve-alias 'proxies-on-cloudflare=../../../dist/' --target=webworker --mode=none ./dist/main.js --output ./dist/worker.js",
         "prepare": "tsc && webpack --target=webworker --mode=none ./dist/main.js --output ./dist/worker.js",
         "deploy": "serverless deploy",
         "predeploy": "npm run prepare"
