@@ -1,5 +1,8 @@
 // express => koa => quoi ?
 // DISCLAIMER: this isn't really optimized
+// TODO:
+// - [ ] Middleware
+// - [ ] Nicer chaining / composition
 
 /*
  * Usage
@@ -12,11 +15,14 @@ app.listen();
 
 import { matcher } from './globs'
 import { FetchEvent } from "./types";
+import { patchEvent, patchRequest } from './common/patch'
 export type ServeFunction = (event: FetchEvent) => Promise<Response>;
 export type FilterFunction = (request: Request) => boolean;
+export type PatchFunction = (request: Request) => Request;
 
 interface Route {
     ctx?: AppRouteContext;
+    patch?: PatchFunction;
     should: FilterFunction;
     handler: ServeFunction;
 }
@@ -38,9 +44,12 @@ class App {
         // Check routes one by one
         console.log('url:', e.request.url);
         for (const route of this.routes) {
-            if (route.should(e.request)) {
-                console.log('hit', route.ctx);
-                return route.handler(e);
+            // Patch event if necessary
+            const ev = route.patch ? patchEvent(e, route.patch(e.request)) : e;
+            // Check routing
+            if (route.should(ev.request)) {
+                // Patch event if necessary
+                return route.handler(ev);
             } else {
                 console.log('skip', route.ctx);
             }
@@ -106,6 +115,7 @@ class App {
 }
 
 interface AppRouteContext {
+    root?: string;
     path?: string;
     method?: string;
     domain?: string;
@@ -154,9 +164,27 @@ class AppRoute {
     serve(handler: ServeFunction): void {
         this.app.routes.push({
             should: this.filter(),
+            patch: this.patcher(),
             handler: handler,
             ctx: this.ctx,
         })
+    }
+
+    root(rootPath: string): AppRoute {
+        return this._sub({ root: rootPath });
+    }
+
+    patcher(): (PatchFunction | undefined) {
+        // Only patch request if we have a root set
+        if (!this.ctx.root) {
+            return undefined;
+        }
+        const prefix = this.ctx.root;
+        return (req: Request) => {
+            const url = new URL(req.url);
+            url.pathname = url.pathname.startsWith(prefix) ? url.pathname.slice(prefix.length) : url.pathname;
+            return patchRequest(req, { url: url.toString() });
+        }
     }
 
     mount(app: App): void {
@@ -175,7 +203,7 @@ class AppRoute {
 }
 
 function filterFromCtx(ctx: AppRouteContext): FilterFunction {
-    const { path, method, domain } = ctx;
+    const { root, path, method, domain } = ctx;
 
     // Pattern matchers
     const pathMatcher = path ? matcher(path) : null;
@@ -185,11 +213,12 @@ function filterFromCtx(ctx: AppRouteContext): FilterFunction {
         const url = new URL(req.url);
 
         // Match domain, path, method
+        const r = root ? url.pathname.startsWith(root) : true;
         const d = domainMatcher ? domainMatcher(url.hostname) : true;
         const p = pathMatcher ? pathMatcher(url.pathname) : true;
         const m = method ? method === req.method : true;
 
         // All must match for filter to be true
-        return (d && p && m);
+        return (r && d && p && m);
     }
 }
