@@ -1,7 +1,9 @@
 import { Matcher } from './rewrites';
 import { cloudfuncEndpoint, fbhostingEndpoint } from './urls';
-import { FirebaseConfig, FetchEvent } from './types';
-import { CachedProxy, ServeFunction } from './reverseproxy'
+import { FirebaseConfig } from './types';
+import { FetchEvent, ServeFunction } from '../types';
+import { cache } from '../cache';
+import { custom as customProxy } from '../proxy/'
 
 interface ExtraOptions {
     // Extra headers to add to each response
@@ -14,7 +16,7 @@ interface HeaderOptions {
     [key: string]: string | null
 }
 
-export default class FirebaseOnCloudflare {
+export default class Firebase {
     matcher: Matcher;
     projectID: string;
     hostingEndpoint: URL;
@@ -34,11 +36,10 @@ export default class FirebaseOnCloudflare {
         // Cache seed
         this.seed = (extra && extra.seed) ? extra.seed : '42';
         // Proxy
-        this.proxy = CachedProxy({
-            endpoint: (req: Request) => this.getEndpoint(req),
-            headers: () => this.globalHeaders,
-            seed: this.seed,
-        })
+        this.proxy = cache(
+            customProxy((req) => this.getEndpoint(req!)),
+            this.seed,
+        )
     }
 
     async serve(event: FetchEvent): Promise<Response> {

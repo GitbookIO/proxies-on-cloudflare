@@ -1,12 +1,11 @@
 import quoi from './quoi';
-import FirebaseOnCloudflare from './firebase';
-import { ReverseProxy, CachedProxy, StaticEndpoint, StaticHeaders } from './reverseproxy';
+import firebase from './firebase/';
+import mixpanel from './mixpanel/';
+import * as proxy from './proxy/';
 
-export default FirebaseOnCloudflare;
 export {
     quoi,
-    ReverseProxy,
-    CachedProxy,
-    StaticEndpoint,
-    StaticHeaders
+    firebase,
+    mixpanel,
+    proxy,
 }

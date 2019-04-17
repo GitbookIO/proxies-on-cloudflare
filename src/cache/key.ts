@@ -1,7 +1,8 @@
 import { sha256 } from './crypto';
+import { patchRequest } from '../common/patch';
 
-// requestCacheKey builds a Request object that can be used as a cloudflare cache key
-export async function requestCacheKey(request: Request, seed: string): Promise<Request> {
+// cacheKey builds a Request object that can be used as a cloudflare cache key
+export async function cacheKey(request: Request, seed: string): Promise<Request> {
     // Ignore non GETs
     if (request.method != 'GET') {
         return request;
@@ -12,12 +13,9 @@ export async function requestCacheKey(request: Request, seed: string): Promise<R
 
     // Get original path
     const url = new URL(request.url);
-
     url.pathname = `/__magic_cache/${hash}` + url.pathname;
-    return new Request(url.toString(), {
-        headers: request.headers,
-        method: 'GET'
-    });
+
+    return patchRequest(request, { url: url.toString() });
 }
 
 // varyHash hashes a request's headers so we can use them in the cache key

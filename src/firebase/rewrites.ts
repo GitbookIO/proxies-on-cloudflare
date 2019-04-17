@@ -1,5 +1,5 @@
 import { FirebaseRewrites } from './types'
-import { isGlob, globToRegex } from './globs';
+import { isGlob, globToRegex } from '../globs';
 
 interface GlobMatch {
     regex: RegExp,

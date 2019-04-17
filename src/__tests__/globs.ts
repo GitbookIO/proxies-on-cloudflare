@@ -1,4 +1,4 @@
-import { isGlob, matcher, globToRegex } from "../globs";
+import { isGlob, matcher } from "../globs";
 
 // Globs
 test.each([
