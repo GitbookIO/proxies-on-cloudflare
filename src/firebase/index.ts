@@ -17,7 +17,15 @@ interface HeaderOptions {
     [key: string]: string | null
 }
 
-export default class Firebase {
+// firebase returns a proxy (ServeFunction) that can route traffic
+// to individual cloud functions described in a firebase.json
+// and fallback traffic goes to firebase-hosting (e.g: static files)
+export default function firebase(projectID: string, config: FirebaseConfig, extra?: ExtraOptions): ServeFunction {
+    const fbase = new Firebase(projectID, config, extra);
+    return fbase.serve.bind(fbase);
+}
+
+class Firebase {
     matcher: Matcher;
     projectID: string;
     hostingEndpoint: URL;
