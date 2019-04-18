@@ -33,10 +33,11 @@ export default function quoi(): App {
 
 class App {
     routes: Array<Route> = [];
-    root: AppRoute;
+    _top: AppRoute;
 
     constructor() {
-        this.root = new AppRoute(this, {});
+        // Our top ("root") route
+        this._top = new AppRoute(this, {});
     }
 
     handler = async (event: any): Promise<Response> => {
@@ -67,35 +68,39 @@ class App {
 
     /* Route methods */
     path(expr: string): AppRoute {
-        return this.root.path(expr);
+        return this._top.path(expr);
     }
 
     method(verb: string): AppRoute {
-        return this.root.method(verb);
+        return this._top.method(verb);
     }
 
     domain(expr: string): AppRoute {
-        return this.root.domain(expr);
+        return this._top.domain(expr);
     }
 
     get(path: string, handler: ServeFunction): void {
-        return this.root.get(path, handler);
+        return this._top.get(path, handler);
     }
 
     put(path: string, handler: ServeFunction): void {
-        return this.root.put(path, handler);
+        return this._top.put(path, handler);
     }
 
     post(path: string, handler: ServeFunction): void {
-        return this.root.post(path, handler)
+        return this._top.post(path, handler)
     }
 
     serve(handler: ServeFunction): void {
-        return this.root.serve(handler);
+        return this._top.serve(handler);
     }
 
     mount(app: App): void {
-        return this.root.mount(app);
+        return this._top.mount(app);
+    }
+
+    root(rootPath: string): AppRoute {
+        return this._top.root(rootPath);
     }
 
     /* Listen methods */
