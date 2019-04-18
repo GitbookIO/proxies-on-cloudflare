@@ -44,11 +44,10 @@ class App {
         // Check routes one by one
         console.log('url:', e.request.url);
         for (const route of this.routes) {
-            // Patch event if necessary
-            const ev = route.patch ? patchEvent(e, route.patch(e.request)) : e;
             // Check routing
-            if (route.should(ev.request)) {
+            if (route.should(e.request)) {
                 // Patch event if necessary
+                const ev = route.patch ? patchEvent(e, route.patch(e.request)) : e;
                 return route.handler(ev);
             } else {
                 console.log('skip', route.ctx);
@@ -182,7 +181,7 @@ class AppRoute {
         const prefix = this.ctx.root;
         return (req: Request) => {
             const url = new URL(req.url);
-            url.pathname = url.pathname.startsWith(prefix) ? url.pathname.slice(prefix.length) : url.pathname;
+            url.pathname = trimRoot(url.pathname, prefix);
             return patchRequest(req, { url: url.toString() });
         }
     }
@@ -212,13 +211,30 @@ function filterFromCtx(ctx: AppRouteContext): FilterFunction {
     return (req: Request): boolean => {
         const url = new URL(req.url);
 
+        // The url's pathname after truncating root
+        const finalPath = trimRoot(url.pathname, root || '');
+
         // Match domain, path, method
         const r = root ? url.pathname.startsWith(root) : true;
         const d = domainMatcher ? domainMatcher(url.hostname) : true;
-        const p = pathMatcher ? pathMatcher(url.pathname) : true;
+        const p = pathMatcher ? pathMatcher(finalPath) : true;
         const m = method ? method === req.method : true;
 
         // All must match for filter to be true
         return (r && d && p && m);
     }
+}
+
+// trimRoot removes the root part of a path but ensure it still starts with a /
+function trimRoot(path: string, root: string): string {
+    const trimmed = trimPrefix(path, root);
+    return ensurePrefix(trimmed, '/');
+}
+
+function trimPrefix(str: string, prefix: string): string {
+    return str.startsWith(prefix) ? str.slice(prefix.length) : str;
+}
+
+function ensurePrefix(str: string, prefix: string): string {
+    return str.startsWith(prefix) ? str : (prefix + str);
 }
