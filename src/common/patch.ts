@@ -7,7 +7,7 @@ export function patchEvent(event: FetchEvent, req: Request): FetchEvent {
     });
 }
 
-interface RequestChanges {
+export interface RequestChanges {
     url?: string,
     method?: string,
     body?: ReadableStream<Uint8Array> | null,
@@ -35,7 +35,7 @@ export function patchResponse(resp: Response, changes: ResponseInit): Response {
     });
 }
 
-interface HeaderChanges {
+export interface HeaderChanges {
     [key: string]: string | null
 }
 // patchHeaders returns a copy of the headers with the applied changes
