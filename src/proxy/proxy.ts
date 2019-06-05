@@ -34,9 +34,6 @@ export function proxy(
     const upstreamRequest = requestToUpstream(request, endpoint, opts);
 
     // Make request
-    console.log('upstreamRequest:', upstreamRequest.url);
-    console.log([...upstreamRequest.headers.entries()]);
-    console.log();
     const response = await fetch(upstreamRequest, {
       redirect: 'manual',
       cf: {
