@@ -37,7 +37,8 @@ export function proxy(
     const response = await fetch(upstreamRequest, {
       redirect: 'manual',
       cf: {
-        resolveOverride: opts.host === 'original' ? endpoint.hostname : undefined
+        resolveOverride:
+          opts.host === 'original' ? endpoint.hostname : undefined
       }
     } as any);
 
@@ -65,12 +66,12 @@ export function requestToUpstream(
   const customHeaders: HeaderChanges =
     opts.host === 'xforwarded'
       ? {
-        'X-Forwarded-Host': original.hostname,
-        'X-Forwarded-Proto': original.protocol
-      }
+          'X-Forwarded-Host': original.hostname,
+          'X-Forwarded-Proto': original.protocol
+        }
       : {
-        Host: original.hostname
-      };
+          Host: original.hostname
+        };
 
   // Copy old headers
   const headers = patchHeaders(request.headers, customHeaders);

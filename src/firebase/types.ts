@@ -1,10 +1,10 @@
 export interface FirebaseConfig {
-    rewrites: FirebaseRewrites
+  rewrites: FirebaseRewrites;
 }
 
-export interface FirebaseRewrites extends Array<FirebaseRewrite> { }
+export interface FirebaseRewrites extends Array<FirebaseRewrite> {}
 
 export interface FirebaseRewrite {
-    source: string,
-    function: string,
+  source: string;
+  function: string;
 }
