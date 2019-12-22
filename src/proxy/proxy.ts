@@ -3,8 +3,11 @@ import { FetchEvent, ServeFunction } from '../types';
 
 export type GetEndpoint = (req?: Request) => URL;
 
+type CustomHeaders = (req: Request) => HeaderChanges;
+
 export interface ProxyOptions {
   host?: 'original' | 'xforwarded';
+  headers?: CustomHeaders;
 }
 
 const DEFAULT_OPTIONS: ProxyOptions = {
@@ -63,15 +66,22 @@ export function requestToUpstream(
     opts.host === 'original' ? original.hostname : upstream.hostname;
   url.protocol = upstream.protocol;
 
-  const customHeaders: HeaderChanges =
+  const hostHeaders =
     opts.host === 'xforwarded'
       ? {
-          'X-Forwarded-Host': original.hostname,
-          'X-Forwarded-Proto': original.protocol
-        }
+        'X-Forwarded-Host': original.hostname,
+        'X-Forwarded-Proto': original.protocol
+      }
       : {
-          Host: original.hostname
-        };
+        Host: original.hostname
+      };
+
+  const reqHeaders = opts.headers ? opts.headers(request) : {};
+
+  const customHeaders: HeaderChanges = {
+    ...(hostHeaders as any),
+    ...reqHeaders
+  };
 
   // Copy old headers
   const headers = patchHeaders(request.headers, customHeaders);

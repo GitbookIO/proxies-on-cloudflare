@@ -35,9 +35,8 @@ export function patchResponse(resp: Response, changes: ResponseInit): Response {
   });
 }
 
-export interface HeaderChanges {
-  [key: string]: string | null;
-}
+export type HeaderChanges = Record<string, string | null>;
+
 // patchHeaders returns a copy of the headers with the applied changes
 export function patchHeaders(
   headers: Headers,
