@@ -6,3 +6,7 @@ export interface FetchEvent extends Event {
     respondWith(r: Promise<Response> | Response): Promise<Response>;
     waitUntil(p: Promise<any>): void;
 }
+
+export interface FetchCFOptions {
+    cacheEverything?: boolean;
+}
