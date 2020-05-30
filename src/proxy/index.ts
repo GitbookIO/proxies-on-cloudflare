@@ -2,8 +2,6 @@ import { ServeFunction } from '../types';
 import * as endpoints from './endpoints';
 import { GetEndpoint, proxy as rawProxy, ProxyOptions } from './proxy';
 
-export type GetEndpoint = (req: Request) => URL;
-
 export function random(
   upstreams: string[],
   opts?: ProxyOptions
