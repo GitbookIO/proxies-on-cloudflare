@@ -1,5 +1,5 @@
 import { HeaderChanges, patchHeaders, patchRequest } from '../common/patch';
-import { FetchEvent, ServeFunction } from '../types';
+import { FetchEvent, FetchCFOptions, ServeFunction } from '../types';
 
 export type GetEndpoint = (req?: Request) => URL;
 
@@ -8,6 +8,7 @@ type CustomHeaders = (req: Request) => HeaderChanges;
 export interface ProxyOptions {
   host?: 'original' | 'xforwarded';
   headers?: CustomHeaders;
+  cf?: FetchCFOptions;
 }
 
 const DEFAULT_OPTIONS: ProxyOptions = {
@@ -40,6 +41,7 @@ export function proxy(
     const response = await fetch(upstreamRequest, {
       redirect: 'manual',
       cf: {
+        ...(opts.cf || {}),
         resolveOverride:
           opts.host === 'original' ? endpoint.hostname : undefined
       }
