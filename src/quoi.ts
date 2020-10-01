@@ -66,6 +66,10 @@ class App {
         return this.routes.some(route => route.should(request));
     }
 
+    when(predicate: FilterFunction): AppRoute {
+        return this._top.when(predicate);
+    }
+
     /* Route methods */
     path(expr: string): AppRoute {
         return this._top.path(expr);
@@ -123,6 +127,7 @@ interface AppRouteContext {
     path?: string;
     method?: string;
     domain?: string;
+    when?: FilterFunction;
 }
 
 class AppRoute {
@@ -139,6 +144,10 @@ class AppRoute {
             ...this.ctx,
             ...ctxChanges,
         });
+    }
+
+    when(predicate: FilterFunction): AppRoute {
+        return this._sub({ when: predicate });
     }
 
     path(expr: string): AppRoute {
@@ -207,7 +216,7 @@ class AppRoute {
 }
 
 function filterFromCtx(ctx: AppRouteContext): FilterFunction {
-    const { root, path, method, domain } = ctx;
+    const { root, path, method, domain, when } = ctx;
 
     // Pattern matchers
     const pathMatcher = path ? matcher(path) : null;
@@ -224,9 +233,10 @@ function filterFromCtx(ctx: AppRouteContext): FilterFunction {
         const d = domainMatcher ? domainMatcher(url.hostname) : true;
         const p = pathMatcher ? pathMatcher(finalPath) : true;
         const m = method ? method === req.method : true;
+        const w = when ? when(req) : true;
 
         // All must match for filter to be true
-        return (r && d && p && m);
+        return (r && d && p && m && w);
     }
 }
 
