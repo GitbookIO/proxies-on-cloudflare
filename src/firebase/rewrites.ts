@@ -3,11 +3,11 @@ import { FirebaseRewrites } from './types';
 
 interface GlobMatch {
   regex: RegExp;
-  function: string;
+  function: string | null;
 }
 
 interface ExactMatches {
-  [key: string]: string;
+  [key: string]: string | null;
 }
 
 export class Matcher {
@@ -16,20 +16,23 @@ export class Matcher {
 
   constructor(rewrites: FirebaseRewrites) {
     // List of glob patterns (tansformed to regexes)
-    this.globs = rewrites
-      .filter(r => isGlob(r.source))
-      .map(r => ({
-        regex: globToRegex(pathGlob(r.source)),
-        function: r.function
-      }));
+    this.globs = rewrites.reduce((accu, r) => {
+      if (isGlob(r.source)) {
+        accu.push({
+          regex: globToRegex(pathGlob(r.source)),
+          function: r.function || null,
+        });
+      }
+      return accu;
+    }, [] as GlobMatch[]);
 
     // Dict of exact matches
-    this.exacts = rewrites
-      .filter(r => !isGlob(r.source))
-      .reduce<ExactMatches>((accu, r) => {
-        accu[r.source] = r.function;
-        return accu;
-      }, {});
+    this.exacts = rewrites.reduce((accu, r) => {
+      if (!isGlob(r.source)) {
+        accu[r.source] = r.function || null;
+      }
+      return accu;
+    }, {} as ExactMatches);
   }
 
   // Matching function, converting path to func name, null if no match

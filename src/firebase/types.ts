@@ -6,5 +6,6 @@ export interface FirebaseRewrites extends Array<FirebaseRewrite> {}
 
 export interface FirebaseRewrite {
   source: string;
-  function: string;
+  function?: string;
+  destination?: string;
 }
