@@ -1,5 +1,5 @@
-import { globToRegex, isGlob } from "../globs";
-import { FirebaseRewrites } from "./types";
+import { globToRegex, isGlob } from '../globs';
+import { FirebaseRewrites } from './types';
 
 interface GlobMatch {
   regex: RegExp;
@@ -57,5 +57,5 @@ export class Matcher {
 // pathGlob ensure that all path glob expressions start with a /
 function pathGlob(expr: string): string {
   // Ensure path starts with '/'
-  return expr.replace(/^\/?/, "/");
+  return expr.replace(/^\/?/, '/');
 }
