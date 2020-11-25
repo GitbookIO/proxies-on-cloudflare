@@ -1,5 +1,5 @@
-import { globToRegex, isGlob } from '../globs';
-import { FirebaseRewrites } from './types';
+import { globToRegex, isGlob } from "../globs";
+import { FirebaseRewrites } from "./types";
 
 interface GlobMatch {
   regex: RegExp;
@@ -16,20 +16,23 @@ export class Matcher {
 
   constructor(rewrites: FirebaseRewrites) {
     // List of glob patterns (tansformed to regexes)
-    this.globs = rewrites
-      .filter(r => isGlob(r.source))
-      .map(r => ({
-        regex: globToRegex(pathGlob(r.source)),
-        function: r.function
-      }));
+    this.globs = rewrites.reduce((accu, r) => {
+      if (isGlob(r.source) && r.function) {
+        accu.push({
+          regex: globToRegex(pathGlob(r.source)),
+          function: r.function,
+        });
+      }
+      return accu;
+    }, [] as GlobMatch[]);
 
     // Dict of exact matches
-    this.exacts = rewrites
-      .filter(r => !isGlob(r.source))
-      .reduce<ExactMatches>((accu, r) => {
+    this.exacts = rewrites.reduce((accu, r) => {
+      if (!isGlob(r.source) && r.function) {
         accu[r.source] = r.function;
-        return accu;
-      }, {});
+      }
+      return accu;
+    }, {} as ExactMatches);
   }
 
   // Matching function, converting path to func name, null if no match
@@ -54,5 +57,5 @@ export class Matcher {
 // pathGlob ensure that all path glob expressions start with a /
 function pathGlob(expr: string): string {
   // Ensure path starts with '/'
-  return expr.replace(/^\/?/, '/');
+  return expr.replace(/^\/?/, "/");
 }
