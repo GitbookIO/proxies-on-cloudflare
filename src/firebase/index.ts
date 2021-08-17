@@ -12,6 +12,8 @@ interface ExtraOptions {
   // Seed (string) of our cache hash
   // changing the seed will invalidate all previous entries
   seed?: string;
+  // Custom endpoint to fetch public files from instead of Firebase hosting
+  publicEndpoint?: URL;
 }
 interface HeaderOptions {
   [key: string]: string | null;
@@ -32,6 +34,7 @@ export default function firebase(
 class Firebase {
   public matcher: Matcher;
   public projectID: string;
+  public publicEndpoint: URL;
   public hostingEndpoint: URL;
   public globalHeaders: HeaderOptions;
   public proxy: ServeFunction;
@@ -44,6 +47,8 @@ class Firebase {
     this.matcher = new Matcher(config.rewrites);
     // Static Hosting endpoint
     this.hostingEndpoint = fbhostingEndpoint(projectID);
+    // Endpoint for public files in hosting, can be overriden in extra options
+    this.publicEndpoint = extra?.publicEndpoint || this.hostingEndpoint;
     // Custom headers
     this.globalHeaders = extra && extra.headers ? extra.headers : {};
     // Cache seed
@@ -71,15 +76,19 @@ class Firebase {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    // Get cloud func for path
-    const funcname = this.matcher.match(pathname);
-
+    
     // Is this URL part of Firebase's reserved /__/* namespace
     const isReserved = pathname.startsWith('/__/');
-
-    // If no func matched or reserved, pass through to FirebaseHosting
-    if (isReserved || !funcname) {
+    // If reserved, pass through to the original FirebaseHosting application endpoint
+    if (isReserved) {
       return this.hostingEndpoint;
+    }
+
+    // Get cloud func for path
+    const funcname = this.matcher.match(pathname);
+    // If no func matched, we're looking for a public file in Firebase hosting, pass through
+    if (!funcname) {
+      return this.publicEndpoint;
     }
 
     // Route to specific cloud function
