@@ -65,6 +65,16 @@ describe('getEndpoint', () => {
     expect(endpointURL.toString()).toBe('https://my-endpoint.com/public');
   });
 
+  it('should return the default Firebase hosting endpoint for reserved requests', async () => {
+    const endpointURL = firebase.getEndpoint(
+      new Request('https://myapp.com/__/some/firebase/request')
+    );
+
+    expect(endpointURL.toString()).toBe(
+      'https://firebase-project.firebaseapp.com/'
+    );
+  });
+
   it('should return the public endpoint URL for any other request', async () => {
     const endpointURL = firebase.getEndpoint(
       new Request('https://myapp.com/some/file.js')
@@ -75,19 +85,39 @@ describe('getEndpoint', () => {
 });
 
 describe('rewriteURL', () => {
-  it('should not modify an URL that matches a rewrite rule', async () => {
+  it('should not rewrite an URL that matches a rewrite rule', async () => {
     const finalURL = firebase.rewriteURL(
-      new URL('https://myapp.com/some/file.js')
+      new URL('https://myapp.com/some/js-file.js')
     );
 
     expect(finalURL.toString()).toBe('https://myapp.com/some/js-file.js');
   });
 
-  it('should modify an URL that has a rewrite rule', async () => {
+  it('should rewrite an URL that has a rewrite rule', async () => {
     const finalURL = firebase.rewriteURL(
       new URL('https://myapp.com/some/non-js-file.html')
     );
 
     expect(finalURL.toString()).toBe('https://myapp.com/index.html');
+  });
+
+  it('should not rewrite Firebase reserved requests', async () => {
+    const finalURL = firebase.rewriteURL(
+      new URL('https://myapp.com/__/some/firebase/request')
+    );
+
+    expect(finalURL.toString()).toBe(
+      'https://myapp.com/__/some/firebase/request'
+    );
+  });
+
+  it('should not rewrite an URL that matches a function', async () => {
+    const finalURL = firebase.rewriteURL(
+      new URL('https://myapp.com/function-with-glob/and/path')
+    );
+
+    expect(finalURL.toString()).toBe(
+      'https://myapp.com/function-with-glob/and/path'
+    );
   });
 });
