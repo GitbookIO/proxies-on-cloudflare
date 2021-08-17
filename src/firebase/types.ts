@@ -4,7 +4,16 @@ export interface FirebaseConfig {
 
 export interface FirebaseRewrites extends Array<FirebaseRewrite> {}
 
-export interface FirebaseRewrite {
+export interface FirebaseFunctionRewrite {
   source: string;
   function: string;
 }
+
+export interface FirebaseDestinationRewrite {
+  source: string;
+  destination: string;
+}
+
+export type FirebaseRewrite =
+  | FirebaseFunctionRewrite
+  | FirebaseDestinationRewrite;

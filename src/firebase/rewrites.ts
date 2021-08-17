@@ -1,13 +1,25 @@
-import { globToRegex, isGlob } from '../globs';
+import pm from 'picomatch';
+import { isGlob } from '../globs';
 import { FirebaseRewrites } from './types';
 
-interface GlobMatch {
-  regex: RegExp;
+interface FunctionMatch {
   function: string;
 }
 
+interface DestinationMatch {
+  destination: string;
+}
+
+type RewriteMatch = FunctionMatch | DestinationMatch;
+
+interface GlobMatch {
+  // Matcher for a path
+  matcher: (path: string) => boolean;
+  match: RewriteMatch;
+}
+
 interface ExactMatches {
-  [key: string]: string;
+  [path: string]: RewriteMatch;
 }
 
 export class Matcher {
@@ -19,21 +31,27 @@ export class Matcher {
     this.globs = rewrites
       .filter(r => isGlob(r.source))
       .map(r => ({
-        regex: globToRegex(pathGlob(r.source)),
-        function: r.function
+        matcher: pm(r.source),
+        match:
+          'function' in r
+            ? { function: r.function }
+            : { destination: r.destination }
       }));
 
     // Dict of exact matches
     this.exacts = rewrites
       .filter(r => !isGlob(r.source))
       .reduce<ExactMatches>((accu, r) => {
-        accu[r.source] = r.function;
+        accu[r.source] =
+          'function' in r
+            ? { function: r.function }
+            : { destination: r.destination };
         return accu;
       }, {});
   }
 
   // Matching function, converting path to func name, null if no match
-  public match(path: string): string | null {
+  public match(path: string): RewriteMatch | null {
     // Try exact match
     if (path in this.exacts) {
       return this.exacts[path];
@@ -41,18 +59,12 @@ export class Matcher {
 
     // Globs
     for (const glob of this.globs) {
-      if (glob.regex.test(path)) {
-        return glob.function;
+      if (glob.matcher(path)) {
+        return glob.match;
       }
     }
 
     // No function found
     return null;
   }
-}
-
-// pathGlob ensure that all path glob expressions start with a /
-function pathGlob(expr: string): string {
-  // Ensure path starts with '/'
-  return expr.replace(/^\/?/, '/');
 }

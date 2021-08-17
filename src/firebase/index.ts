@@ -48,7 +48,10 @@ class Firebase {
     // Static Hosting endpoint
     this.hostingEndpoint = fbhostingEndpoint(projectID);
     // Endpoint for public files in hosting, can be overriden in extra options
-    this.publicEndpoint = extra && extra.publicEndpoint ? extra.publicEndpoint : this.hostingEndpoint;
+    this.publicEndpoint =
+      extra && extra.publicEndpoint
+        ? extra.publicEndpoint
+        : this.hostingEndpoint;
     // Custom headers
     this.globalHeaders = extra && extra.headers ? extra.headers : {};
     // Cache seed
@@ -76,7 +79,6 @@ class Firebase {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    
     // Is this URL part of Firebase's reserved /__/* namespace
     const isReserved = pathname.startsWith('/__/');
     // If reserved, pass through to the original FirebaseHosting application endpoint
@@ -85,13 +87,13 @@ class Firebase {
     }
 
     // Get cloud func for path
-    const funcname = this.matcher.match(pathname);
+    const match = this.matcher.match(pathname);
     // If no func matched, we're looking for a public file in Firebase hosting, pass through
-    if (!funcname) {
+    if (!match || !('function' in match)) {
       return this.publicEndpoint;
     }
 
     // Route to specific cloud function
-    return cloudfuncEndpoint(this.projectID, funcname);
+    return cloudfuncEndpoint(this.projectID, match.function);
   }
 }

@@ -2,7 +2,9 @@
     "name": "proxies-on-cloudflare",
     "main": "./dist/index.js",
     "version": "0.3.4",
-    "dependencies": {},
+    "dependencies": {
+        "picomatch": "^2.3.0"
+    },
     "files": [
         "dist/*"
     ],
