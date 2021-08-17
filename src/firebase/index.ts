@@ -31,7 +31,7 @@ export default function firebase(
   return fbase.serve.bind(fbase);
 }
 
-class Firebase {
+export class Firebase {
   public matcher: Matcher;
   public projectID: string;
   public publicEndpoint: URL;
