@@ -1,4 +1,4 @@
-import pm from 'picomatch';
+import * as pm from 'picomatch';
 import { isGlob } from '../globs';
 import { FirebaseRewrites } from './types';
 
@@ -31,7 +31,7 @@ export class Matcher {
     this.globs = rewrites
       .filter(r => isGlob(r.source))
       .map(r => ({
-        matcher: pm(r.source),
+        matcher: (path: string) => pm.isMatch(path, r.source),
         match:
           'function' in r
             ? { function: r.function }
