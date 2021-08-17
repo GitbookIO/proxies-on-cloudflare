@@ -48,7 +48,7 @@ class Firebase {
     // Static Hosting endpoint
     this.hostingEndpoint = fbhostingEndpoint(projectID);
     // Endpoint for public files in hosting, can be overriden in extra options
-    this.publicEndpoint = extra?.publicEndpoint || this.hostingEndpoint;
+    this.publicEndpoint = extra && extra.publicEndpoint ? extra.publicEndpoint : this.hostingEndpoint;
     // Custom headers
     this.globalHeaders = extra && extra.headers ? extra.headers : {};
     // Cache seed
