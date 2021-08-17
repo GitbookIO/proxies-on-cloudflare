@@ -84,10 +84,8 @@ export class Firebase {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    // Is this URL part of Firebase's reserved /__/* namespace
-    const isReserved = pathname.startsWith('/__/');
     // If reserved, pass through to the original FirebaseHosting application endpoint
-    if (isReserved) {
+    if (isReserved(pathname)) {
       return this.hostingEndpoint;
     }
 
@@ -106,6 +104,11 @@ export class Firebase {
    * Rewrite URL's pathname to match configured destination
    */
   public rewriteURL(url: URL): URL {
+    // If reserved, we never modify the request
+    if (isReserved(url.pathname)) {
+      return url;
+    }
+
     const match = this.matcher.match(url.pathname);
     if (!match || !('destination' in match)) {
       return url;
@@ -114,4 +117,11 @@ export class Firebase {
     url.pathname = match.destination;
     return url;
   }
+}
+
+/**
+ * Is this URL part of Firebase's reserved /__/* namespace
+ */
+function isReserved(pathname: string): boolean {
+  return pathname.startsWith('/__/');
 }
