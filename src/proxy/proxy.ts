@@ -1,5 +1,5 @@
 import { HeaderChanges, patchHeaders, patchRequest } from '../common/patch';
-import { FetchEvent, FetchCFOptions, ServeFunction } from '../types';
+import { FetchCFOptions, FetchEvent, ServeFunction } from '../types';
 
 export type GetEndpoint = (req?: Request) => URL;
 
@@ -9,6 +9,8 @@ export interface ProxyOptions {
   host?: 'original' | 'xforwarded';
   headers?: CustomHeaders;
   cf?: FetchCFOptions;
+  // Allow updating the original request URL before fetching upstream
+  rewriteURL?: (url: URL) => URL;
 }
 
 const DEFAULT_OPTIONS: ProxyOptions = {
@@ -27,9 +29,6 @@ export function proxy(
       ...DEFAULT_OPTIONS,
       ...(options || {})
     };
-
-    // Copy of the original URL
-    const original = new URL(request.url);
 
     // Find which endpoint to use
     const endpoint = picker(request);
@@ -59,9 +58,10 @@ export function requestToUpstream(
   opts: ProxyOptions
 ): Request {
   // Parse Request's URL
-  const original = new URL(request.url); // Copy of original info
+  const base = new URL(request.url); // Copy of original info
   const url = new URL(request.url); // Copy we'll modify
 
+  const original = opts.rewriteURL ? opts.rewriteURL(base) : base; // Rewrite base URL if needed
   // Modify request (to route to upstream)
   url.pathname = `${upstream.pathname}/${original.pathname}`;
   url.hostname =
@@ -71,12 +71,12 @@ export function requestToUpstream(
   const hostHeaders =
     opts.host === 'xforwarded'
       ? {
-        'X-Forwarded-Host': original.hostname,
-        'X-Forwarded-Proto': original.protocol
-      }
+          'X-Forwarded-Host': original.hostname,
+          'X-Forwarded-Proto': original.protocol
+        }
       : {
-        Host: original.hostname
-      };
+          Host: original.hostname
+        };
 
   const reqHeaders = opts.headers ? opts.headers(request) : {};
 

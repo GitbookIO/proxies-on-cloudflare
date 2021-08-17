@@ -57,7 +57,12 @@ class Firebase {
     // Cache seed
     this.seed = extra && extra.seed ? extra.seed : '42';
     // Proxy
-    this.proxy = cache(customProxy(req => this.getEndpoint(req!)), this.seed);
+    this.proxy = cache(
+      customProxy(req => this.getEndpoint(req!), {
+        rewriteURL: url => this.rewriteURL(url)
+      }),
+      this.seed
+    );
   }
 
   public async serve(event: FetchEvent): Promise<Response> {
@@ -95,5 +100,18 @@ class Firebase {
 
     // Route to specific cloud function
     return cloudfuncEndpoint(this.projectID, match.function);
+  }
+
+  /**
+   * Rewrite URL's pathname to match configured destination
+   */
+  public rewriteURL(url: URL): URL {
+    const match = this.matcher.match(url.pathname);
+    if (!match || !('destination' in match)) {
+      return url;
+    }
+
+    url.pathname = match.destination;
+    return url;
   }
 }
