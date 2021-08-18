@@ -12,6 +12,8 @@ interface ExtraOptions {
   // Seed (string) of our cache hash
   // changing the seed will invalidate all previous entries
   seed?: string;
+  // Custom endpoint to fetch public files from instead of Firebase hosting
+  publicEndpoint?: URL;
 }
 interface HeaderOptions {
   [key: string]: string | null;
@@ -29,9 +31,10 @@ export default function firebase(
   return fbase.serve.bind(fbase);
 }
 
-class Firebase {
+export class Firebase {
   public matcher: Matcher;
   public projectID: string;
+  public publicEndpoint: URL;
   public hostingEndpoint: URL;
   public globalHeaders: HeaderOptions;
   public proxy: ServeFunction;
@@ -44,12 +47,22 @@ class Firebase {
     this.matcher = new Matcher(config.rewrites);
     // Static Hosting endpoint
     this.hostingEndpoint = fbhostingEndpoint(projectID);
+    // Endpoint for public files in hosting, can be overriden in extra options
+    this.publicEndpoint =
+      extra && extra.publicEndpoint
+        ? extra.publicEndpoint
+        : this.hostingEndpoint;
     // Custom headers
     this.globalHeaders = extra && extra.headers ? extra.headers : {};
     // Cache seed
     this.seed = extra && extra.seed ? extra.seed : '42';
     // Proxy
-    this.proxy = cache(customProxy(req => this.getEndpoint(req!)), this.seed);
+    this.proxy = cache(
+      customProxy(req => this.getEndpoint(req!), {
+        rewriteURL: url => this.rewriteURL(url)
+      }),
+      this.seed
+    );
   }
 
   public async serve(event: FetchEvent): Promise<Response> {
@@ -71,18 +84,44 @@ class Firebase {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    // Get cloud func for path
-    const funcname = this.matcher.match(pathname);
-
-    // Is this URL part of Firebase's reserved /__/* namespace
-    const isReserved = pathname.startsWith('/__/');
-
-    // If no func matched or reserved, pass through to FirebaseHosting
-    if (isReserved || !funcname) {
+    // If reserved, pass through to the original FirebaseHosting application endpoint
+    if (isReserved(pathname)) {
       return this.hostingEndpoint;
     }
 
+    // Get cloud func for path
+    const match = this.matcher.match(pathname);
+    // If no func matched, we're looking for a public file in Firebase hosting, pass through
+    if (!match || !('function' in match)) {
+      return this.publicEndpoint;
+    }
+
     // Route to specific cloud function
-    return cloudfuncEndpoint(this.projectID, funcname);
+    return cloudfuncEndpoint(this.projectID, match.function);
   }
+
+  /**
+   * Rewrite URL's pathname to match configured destination
+   */
+  public rewriteURL(url: URL): URL {
+    // If reserved, we never modify the request
+    if (isReserved(url.pathname)) {
+      return url;
+    }
+
+    const match = this.matcher.match(url.pathname);
+    if (!match || !('destination' in match)) {
+      return url;
+    }
+
+    url.pathname = match.destination;
+    return url;
+  }
+}
+
+/**
+ * Is this URL part of Firebase's reserved /__/* namespace
+ */
+function isReserved(pathname: string): boolean {
+  return pathname.startsWith('/__/');
 }

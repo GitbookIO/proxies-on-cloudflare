@@ -1,8 +1,11 @@
 {
     "name": "proxies-on-cloudflare",
     "main": "./dist/index.js",
+    "license": "Apache-2.0",
     "version": "0.3.4",
-    "dependencies": {},
+    "dependencies": {
+        "picomatch": "^2.3.0"
+    },
     "files": [
         "dist/*"
     ],
@@ -10,6 +13,7 @@
         "@types/jest": "^23.3.11",
         "jest": "^23.6.0",
         "prettier": "^1.15.3",
+        "service-worker-mock": "^2.0.5",
         "ts-jest": "^23.10.5",
         "tslint": "^5.20.0",
         "tslint-config-prettier": "^1.17.0",
@@ -18,24 +22,7 @@
     },
     "scripts": {
         "prepare": "tsc",
-        "test": "jest",
+        "test": "jest --config=jest.config.js",
         "lint": "tslint ./src/**/*.ts"
-    },
-    "jest": {
-        "roots": [
-            "<rootDir>/src"
-        ],
-        "transform": {
-            "^.+\\.tsx?$": "ts-jest"
-        },
-        "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.tsx?$",
-        "moduleFileExtensions": [
-            "ts",
-            "tsx",
-            "js",
-            "jsx",
-            "json",
-            "node"
-        ]
     }
 }
