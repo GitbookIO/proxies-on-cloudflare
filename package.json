@@ -2,7 +2,7 @@
     "name": "proxies-on-cloudflare",
     "main": "./dist/index.js",
     "license": "Apache-2.0",
-    "version": "0.3.4",
+    "version": "0.4.0",
     "dependencies": {
         "picomatch": "^2.3.0"
     },
